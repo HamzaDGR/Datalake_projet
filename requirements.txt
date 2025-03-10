@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+requests
+elasticsearch
+apache-airflow
+pandas
+python-dotenv
+boto3
+mysql-connector-python
