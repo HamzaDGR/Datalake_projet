@@ -9,6 +9,7 @@ Le projet repose sur les technologies suivantes :
 - **AWS S3 (via LocalStack)** pour le stockage des données
 - **MySQL** pour le stockage relationnel des données structurées
 - **MongoDB** pour le stockage NoSQL des données semi-structurées
+- **FastAPI** pour exposer les données via une API REST
 
 ---
 
@@ -92,6 +93,28 @@ Ouvrez MongoDB Compass et connectez-vous à votre base de données pour explorer
 ![Capture d’écran 2025-03-12 001809](https://github.com/user-attachments/assets/0180961a-d87f-4b38-aa3d-a6e9dba8bf17)
 
 ---
+## Requêter les données via l'API
+
+### Une API REST permet d'accéder aux données stockées dans le Data Lake.
+
+### 1. Récupérer les données brutes depuis le bucket S3
+
+Utilisez l'URL suivante pour accéder aux fichiers raw :
+
+http://127.0.0.1:8000/raw/all_content?bucket=open-sky-datalake-bucket&prefix=raw_data/
+
+![image](https://github.com/user-attachments/assets/2e16357e-c53d-4a18-bdc9-0f07726d0fb2)
+
+
+### 2. Récupérer les données curées depuis MongoDB
+
+Utilisez l'URL suivante pour interroger la collection des vols :
+
+http://127.0.0.1:8000/curated?collection=flights
+
+![Capture d’écran 2025-03-12 004417](https://github.com/user-attachments/assets/2fc3b038-4578-40f9-a6ac-1c838bbd8f67)
+
+Les autres API sont en cours de developpement 
 
 ## Auteurs
 
