@@ -1,15 +1,14 @@
-from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-from datetime import datetime, timedelta
-import boto3
-import json
 import pandas as pd
 import logging
-from botocore.exceptions import ClientError
+import json
 import mysql.connector
 from mysql.connector import Error
+import boto3
+from botocore.exceptions import ClientError
+import sys
 
-# Configuration S3
+#PARTIE : S3 UTILS
+
 s3_client = boto3.client('s3', 
                          endpoint_url="http://host.docker.internal:4566",  # LocalStack
                          aws_access_key_id="hamza",
@@ -18,9 +17,39 @@ s3_client = boto3.client('s3',
 
 bucket_name = "open-sky-datalake-bucket"
 raw_data_prefix = "raw_data/"
-staging_data_prefix = "staging_data/"
 
-# Connexion MySQL
+def load_raw_data_from_s3():
+    logger = logging.getLogger('airflow.task')
+
+    try:
+        # Lister les fichiers dans le préfixe "raw_data/"
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=raw_data_prefix)
+
+        if 'Contents' not in response:
+            logger.error("Aucun fichier brut trouvé dans le bucket S3.")
+            return None
+
+        # Prendre le dernier fichier ajouté
+        latest_file = sorted(response['Contents'], key=lambda x: x['LastModified'], reverse=True)[0]
+        file_key = latest_file['Key']
+
+        # Télécharger le fichier depuis S3
+        file_obj = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        raw_data = json.loads(file_obj['Body'].read().decode('utf-8'))
+
+        logger.info(f"Fichier brut téléchargé : {file_key}")
+        return raw_data
+    except ClientError as e:
+        logger.error(f"Erreur lors de la récupération des données depuis S3 : {e}")
+        return None
+
+# Permet d'exécuter la fonction via un appel en ligne de commande
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "load_raw_data_from_s3":
+        load_raw_data_from_s3()
+
+
+# PARTIE  : MYSQL UTILS
 MYSQL_HOST = "mysql"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = "root"
@@ -70,35 +99,49 @@ def create_table():
         cursor.close()
         connection.close()
 
-# Fonction pour charger les données depuis le bucket S3
-def load_raw_data_from_s3():
+def load_data_to_mysql(df, **kwargs):
+    if df is None or df.empty:
+        logging.error("Aucune donnée à insérer dans MySQL.")
+        return
+    
+    connection = create_mysql_connection()
+    if connection:
+        cursor = connection.cursor()
+
+        # Assurez-vous que toutes les valeurs 'NaN' sont converties en 'None'
+        df = df.where(pd.notnull(df), None)
+
+        # Vérifiez à nouveau si des NaN subsistent avant insertion
+        if df.isnull().values.any():
+            logging.error(f"Le DataFrame contient des valeurs 'NaN' ou 'None'. Voici un aperçu : \n{df[df.isnull().any(axis=1)]}")
+            return
+
+        # Préparer la requête d'insertion
+        insert_query = """
+            INSERT INTO flights (icao24, callsign, origin_country, time_position, last_contact, longitude, 
+                      latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, 
+                      sensors, geo_altitude, squawk, spi, position_source)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        
+        values = df[['icao24', 'callsign', 'origin_country', 'time_position', 'last_contact', 'longitude', 
+                      'latitude', 'baro_altitude', 'on_ground', 'velocity', 'true_track', 'vertical_rate', 
+                      'sensors', 'geo_altitude', 'squawk', 'spi', 'position_source']].values.tolist()
+
+
+        # Insertion des données
+        cursor.executemany(insert_query, values)
+        connection.commit()
+        cursor.close()
+        connection.close()
+        logging.info(f"Insertion terminée avec succès.")
+
+
+
+#PARTIE : TRANSFORMATION
+
+def transform_raw_to_staging(raw_data, **kwargs):
     logger = logging.getLogger('airflow.task')
-
-    try:
-        # Lister les fichiers dans le préfixe "raw_data/"
-        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=raw_data_prefix)
-
-        if 'Contents' not in response:
-            logger.error("Aucun fichier brut trouvé dans le bucket S3.")
-            return None
-
-        # Prendre le dernier fichier ajouté
-        latest_file = sorted(response['Contents'], key=lambda x: x['LastModified'], reverse=True)[0]
-        file_key = latest_file['Key']
-
-        # Télécharger le fichier depuis S3
-        file_obj = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-        raw_data = json.loads(file_obj['Body'].read().decode('utf-8'))
-
-        logger.info(f"Fichier brut téléchargé : {file_key}")
-        return raw_data
-    except ClientError as e:
-        logger.error(f"Erreur lors de la récupération des données depuis S3 : {e}")
-        return None
-
-def transform_raw_to_staging(**kwargs):
-    logger = logging.getLogger('airflow.task')
-    raw_data = kwargs['ti'].xcom_pull(task_ids='load_raw_data_from_s3')
 
     if raw_data is None:
         logger.error("Aucune donnée brute disponible pour la transformation.")
@@ -165,86 +208,44 @@ def transform_raw_to_staging(**kwargs):
         logger.error(f"Erreur lors de la transformation des données : {e}")
         return None
 
+# Fonction pour intégrer les étapes d'ingestion, transformation, et interaction avec MySQL
+def ingest_and_transform():
+    logger = logging.getLogger('airflow.task')
 
-def load_data_to_mysql(**kwargs):
-    df = kwargs['ti'].xcom_pull(task_ids='transform_raw_data_to_staging')
+    # Étape 1 : Récupérer les données brutes depuis S3 via la fonction de s3_utils
+    raw_data = load_raw_data_from_s3()
 
-    if df is None:
-        logging.error("Aucune donnée à insérer dans MySQL.")
-        return
-    
-    connection = create_mysql_connection()
-    if connection:
-        cursor = connection.cursor()
+    # Étape 2 : Si les données sont récupérées, les transformer
+    if raw_data:
+        transformed_data = transform_raw_to_staging(raw_data)
+        if transformed_data is not None:
+            logger.info("Les données ont été transformées avec succès.")
 
-        # Assurez-vous que toutes les valeurs 'NaN' sont converties en 'None'
-        df = df.where(pd.notnull(df), None)
+            # Étape 3 : Créer la table dans MySQL
+            try:
+                create_table()  # Crée la table dans MySQL
+                logger.info("Table MySQL créée avec succès.")
+            except Exception as e:
+                logger.error(f"Erreur lors de la création de la table MySQL : {e}")
+                return None
 
-        # Vérifiez à nouveau si des NaN subsistent avant insertion
-        if df.isnull().values.any():
-            logging.error(f"Le DataFrame contient des valeurs 'NaN' ou 'None'. Voici un aperçu : \n{df[df.isnull().any(axis=1)]}")
-            return
+            # Étape 4 : Charger les données transformées dans MySQL
+            try:
+                load_data_to_mysql(transformed_data)  # Charge les données transformées dans MySQL
+                logger.info("Données chargées avec succès dans MySQL.")
+            except Exception as e:
+                logger.error(f"Erreur lors du chargement des données dans MySQL : {e}")
+                return None
 
-        # Préparer la requête d'insertion
-        insert_query = """
-            INSERT INTO flights (icao24, callsign, origin_country, time_position, last_contact, longitude, 
-                      latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, 
-                      sensors, geo_altitude, squawk, spi, position_source)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        
-        values = df[['icao24', 'callsign', 'origin_country', 'time_position', 'last_contact', 'longitude', 
-                      'latitude', 'baro_altitude', 'on_ground', 'velocity', 'true_track', 'vertical_rate', 
-                      'sensors', 'geo_altitude', 'squawk', 'spi', 'position_source']].values.tolist()
+            logger.info("Transformation et chargement terminés avec succès.")
+            return transformed_data
+        else:
+            logger.error("Échec de la transformation des données.")
+            return None
+    else:
+        logger.error("Aucune donnée brute récupérée depuis S3.")
+        return None
 
-
-        # Insertion des données
-        cursor.executemany(insert_query, values)
-        connection.commit()
-        cursor.close()
-        connection.close()
-        logging.info(f"Insertion terminée avec succès.")
-
-# Définir le DAG
-dag = DAG(
-    'raw_to_staging_transformation',
-    description='Transformation des données OpenSky et chargement dans une BD MYSQL',
-    schedule_interval='@hourly',  # Exécuter toutes les heures 
-    start_date=datetime(2025, 3, 9),
-    catchup=False,
-    default_args={
-        'owner': 'hamza',
-        'retries': 1,
-        'retry_delay': timedelta(minutes=5),
-    }
-)
-
-# Définir les tâches
-load_raw_task = PythonOperator(
-    task_id='load_raw_data_from_s3',
-    python_callable=load_raw_data_from_s3,
-    dag=dag
-)
-
-transform_data_task = PythonOperator(
-    task_id='transform_raw_data_to_staging',
-    python_callable=transform_raw_to_staging,
-    provide_context=True,
-    dag=dag
-)
-
-create_table_task = PythonOperator(
-    task_id='create_mysql_table',
-    python_callable=create_table,
-    dag=dag
-)
-
-load_mysql_task = PythonOperator(
-    task_id='load_data_to_mysql',
-    python_callable=load_data_to_mysql,
-    provide_context=True,
-    dag=dag
-)
-
-# Définir les dépendances des tâches
-load_raw_task >> transform_data_task >> create_table_task >> load_mysql_task
+# Si vous souhaitez que cela soit exécuté à partir du script directement
+if __name__ == "__main__":
+    ingest_and_transform()

@@ -1,21 +1,15 @@
-from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.dagrun_operator import TriggerDagRunOperator  # Importer TriggerDagRunOperator
-from datetime import datetime, timedelta
 import requests
 import boto3
 import json
+from datetime import datetime
 import logging
-from botocore.exceptions import ClientError
 
-# URL de l'API
-api_url = "https://opensky-network.org/api/states/all"
-
-# Fonction pour télécharger les données et les envoyer vers S3
 def ingest_data():
     # Créer un logger
     logger = logging.getLogger('airflow.task')
+
+    # URL de l'API
+    api_url = "https://opensky-network.org/api/states/all"
 
     try:
         # Récupère les données depuis l'API
@@ -41,7 +35,7 @@ def ingest_data():
 
             # Envoie les données vers le bucket S3 simulé
             s3_client.put_object(
-                Bucket=bucket_name,  # Le nom de votre bucket S3 simulé dans LocalStack
+                Bucket=bucket_name,  # Le nom de ton bucket S3
                 Key=f"raw_data/{filename}",
                 Body=json.dumps(data)
             )
@@ -53,35 +47,5 @@ def ingest_data():
     except Exception as e:
         logger.error(f"Erreur inconnue : {e}")
 
-# Définir le DAG d'ingestion
-dag = DAG(
-    'data_ingestion',
-    description='Ingestion des données OpenSky dans local stack (S3)',
-    # Exécuter toutes les 30 minutes
-    schedule_interval='*/30 * * * *',  
-    start_date=datetime(2025, 3, 9),
-    catchup=False,
-    default_args={
-        'owner': 'hamza',
-        'retries': 1,
-        'retry_delay': timedelta(minutes=5),
-    }
-)
-
-# Définir la tâche pour déclencher la validation du bucket (DAG séparé)
-create_bucket_task = TriggerDagRunOperator(
-    task_id='trigger_create_bucket',  # Nom de la tâche
-    trigger_dag_id='s3_bucket_creation',  # Nom du DAG de validation du bucket
-    conf={},  # Tu peux envoyer des paramètres si nécessaire
-    dag=dag
-)
-
-# Définir la tâche d'ingestion des données
-ingest_task = PythonOperator(
-    task_id='ingest_data',
-    python_callable=ingest_data,
-    dag=dag
-)
-
-# Définir les dépendances : la tâche d'ingestion dépend de la création du bucket
-create_bucket_task >> ingest_task
+if __name__ == "__main__":
+    ingest_data()
