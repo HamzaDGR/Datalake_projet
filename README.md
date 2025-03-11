@@ -11,7 +11,17 @@ Le projet repose sur les technologies suivantes :
 - **MongoDB** pour le stockage NoSQL des données semi-structurées
 - **FastAPI** pour exposer les données via une API REST
 
+## Open Sky
+
+L'API OpenSky REST est une interface de programmation d'applications qui permet d'accéder à des données en temps réel sur les avions et leur position, collectées à partir de milliers de capteurs et radars répartis dans le monde entier. Elle offre une méthode simple et directe pour obtenir des informations liées au trafic aérien, telles que les positions, les trajets, les horaires, etc. C'est à partir de cette API que nous collecterons les données.
+
 ---
+
+## Architecture Generale 
+
+![architecture drawio](https://github.com/user-attachments/assets/16df8122-bb68-41ed-abbe-1ab07e5ae92b)
+
+
 
 ## Installation
 
