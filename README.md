@@ -116,6 +116,12 @@ http://127.0.0.1:8000/curated?collection=flights
 
 Les autres API sont en cours de developpement 
 
+### Objectif Final : Dashboard Streamlit
+
+L'objectif final de ce projet est de développer un dashboard interactif avec Streamlit, permettant de visualiser et d'analyser les données collectées. Ce dashboard proposera plusieurs graphiques et indicateurs clés pour mieux comprendre les tendances et les statistiques des vols aériens.
+
+
+
 ## Auteurs
 
 ### 👥 Contributeurs
