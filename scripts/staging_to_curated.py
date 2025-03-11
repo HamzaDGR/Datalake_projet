@@ -60,13 +60,13 @@ def transform_data(df):
         return None
 
     try:
-        # 1️⃣ Ajout d'un identifiant unique pour chaque vol
+        # Ajout d'un identifiant unique pour chaque vol
         df['flight_id'] = [str(uuid.uuid4()) for _ in range(len(df))]
 
-        # 2️⃣ Conversion de l'altitude de mètres en pieds
+        #  Conversion de l'altitude de mètres en pieds
         df['altitude_ft'] = df['baro_altitude'] * 3.28084
 
-        # 3️⃣ Direction en texte
+        # Direction en texte
         def direction_text(angle):
             if angle < 22.5 or angle >= 337.5:
                 return 'North'
@@ -87,13 +87,13 @@ def transform_data(df):
 
         df['direction'] = df['true_track'].apply(direction_text)
 
-        # 4️⃣ Création d’un champ géolocalisation (JSON)
+        #  Création d’un champ géolocalisation (JSON)
         df['location'] = df.apply(lambda row: {'longitude': row['longitude'], 'latitude': row['latitude']}, axis=1)
 
-        # 5️⃣ Suppression des colonnes inutiles
+        #  Suppression des colonnes inutiles
         df.drop(columns=['sensors', 'squawk', 'spi', 'baro_altitude'], inplace=True)
 
-        # 6️⃣ Convertir les colonnes datetime et timestamp en chaînes ISO
+        #  Convertir les colonnes datetime et timestamp en chaînes ISO
         df = convert_timestamps_to_str(df)
 
         logging.info("Transformation des données terminée.")

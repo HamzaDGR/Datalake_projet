@@ -35,7 +35,7 @@ def ingest_data():
 
             # Envoie les données vers le bucket S3 simulé
             s3_client.put_object(
-                Bucket=bucket_name,  # Le nom de ton bucket S3
+                Bucket=bucket_name,  
                 Key=f"raw_data/{filename}",
                 Body=json.dumps(data)
             )

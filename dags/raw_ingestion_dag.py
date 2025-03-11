@@ -4,7 +4,7 @@ from airflow.operators.dagrun_operator import TriggerDagRunOperator
 from datetime import datetime, timedelta
 import subprocess
 
-# Définir le DAG d'ingestion
+# Définir le DAG 
 dag1 = DAG(
     'data_ingestion',
     description='Ingestion des données OpenSky dans local stack (S3)',
@@ -18,19 +18,19 @@ dag1 = DAG(
     }
 )
 
-# Fonction pour exécuter le script Python via subprocess
+# script Python via subprocess
 def run_ingestion_script():
     subprocess.run(["python", "/opt/airflow/scripts/s3_create_bucket.py"], check=True)
     subprocess.run(["python", "/opt/airflow/scripts/ingest_data.py"], check=True)
 
-# Définir la tâche d'ingestion des données
+# tâche d'ingestion des données
 ingest_task = PythonOperator(
     task_id='ingest_data',
     python_callable=run_ingestion_script,
     dag=dag1
 )
 
-# Définir la tâche pour déclencher le DAG 2 après ingestion
+# tâche pour déclencher le DAG 2 après ingestion
 trigger_dag2 = TriggerDagRunOperator(
     task_id='trigger_dag2',
     trigger_dag_id='raw_to_staging_transformation',  # ID du DAG 2

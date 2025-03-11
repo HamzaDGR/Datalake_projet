@@ -7,7 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 import sys
 
-#PARTIE : S3 UTILS
+################ PARTIE : S3 ###################
 
 s3_client = boto3.client('s3', 
                          endpoint_url="http://host.docker.internal:4566",  # LocalStack
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         load_raw_data_from_s3()
 
 
-# PARTIE  : MYSQL UTILS
+################ PARTIE  : MYSQL ################
 MYSQL_HOST = "mysql"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = "root"
@@ -138,7 +138,7 @@ def load_data_to_mysql(df, **kwargs):
 
 
 
-#PARTIE : TRANSFORMATION
+################# PARTIE : TRANSFORMATION #####################
 
 def transform_raw_to_staging(raw_data, **kwargs):
     logger = logging.getLogger('airflow.task')
@@ -190,10 +190,10 @@ def transform_raw_to_staging(raw_data, **kwargs):
         df['on_ground'] = df['on_ground'].astype(bool)
         df['spi'] = df['spi'].astype(bool)
 
-        # 6. Supprimer les enregistrements avec des données critiques manquantes (longitude, latitude, velocity)
+        # 5. Supprimer les enregistrements avec des données critiques manquantes (longitude, latitude, velocity)
         df = df.dropna(subset=['longitude', 'latitude', 'velocity'], how='all')
 
-        # 7. Remplir toute autre valeur restante `NaN` dans le dataframe avec des valeurs par défaut
+        # 6. Remplir toute autre valeur restante `NaN` dans le dataframe avec des valeurs par défaut
         df = df.fillna({
             'callsign': 'Unknown',
             'geo_altitude': 0.0,
@@ -223,7 +223,7 @@ def ingest_and_transform():
 
             # Étape 3 : Créer la table dans MySQL
             try:
-                create_table()  # Crée la table dans MySQL
+                create_table()
                 logger.info("Table MySQL créée avec succès.")
             except Exception as e:
                 logger.error(f"Erreur lors de la création de la table MySQL : {e}")
@@ -231,7 +231,7 @@ def ingest_and_transform():
 
             # Étape 4 : Charger les données transformées dans MySQL
             try:
-                load_data_to_mysql(transformed_data)  # Charge les données transformées dans MySQL
+                load_data_to_mysql(transformed_data)  
                 logger.info("Données chargées avec succès dans MySQL.")
             except Exception as e:
                 logger.error(f"Erreur lors du chargement des données dans MySQL : {e}")
@@ -246,6 +246,5 @@ def ingest_and_transform():
         logger.error("Aucune donnée brute récupérée depuis S3.")
         return None
 
-# Si vous souhaitez que cela soit exécuté à partir du script directement
 if __name__ == "__main__":
     ingest_and_transform()

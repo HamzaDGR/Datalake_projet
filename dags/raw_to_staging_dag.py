@@ -19,7 +19,7 @@ dag2 = DAG(
     }
 )
 
-# Fonction pour exécuter le script Python via subprocess
+# script Python via subprocess
 def run_transformation_script():
     try:
         subprocess.run(["python", "/opt/airflow/scripts/raw_to_staging.py"], check=True)
@@ -27,14 +27,14 @@ def run_transformation_script():
         getLogger('airflow.task').error(f"Erreur lors de l'exécution du script : {e}")
         raise
 
-# Définir la tâche d'exécution du script
+# tâche d'exécution du script
 transformation_task = PythonOperator(
     task_id='run_raw_to_staging_transformation',
     python_callable=run_transformation_script,
     dag=dag2
 )
 
-# Définir la tâche pour déclencher le DAG 3 après la transformation
+# tâche pour déclencher le DAG 3 après la transformation
 trigger_dag3 = TriggerDagRunOperator(
     task_id='trigger_dag3',
     trigger_dag_id='mysql_to_mongodb',  # ID du DAG 3

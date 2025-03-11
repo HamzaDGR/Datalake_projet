@@ -2,15 +2,13 @@ import boto3
 from botocore.exceptions import ClientError
 
 def create_s3_bucket_if_not_exists(bucket_name):
-    # Créer un client S3 pour LocalStack
     s3_client = boto3.client('s3', 
-                             endpoint_url="http://host.docker.internal:4566",  # LocalStack
+                             endpoint_url="http://host.docker.internal:4566",  
                              aws_access_key_id="hamza",
                              aws_secret_access_key="hamza123",
                              region_name="us-east-1")
  
     try:
-        # Liste tous les buckets et vérifie si le bucket existe déjà
         response = s3_client.list_buckets()
         existing_buckets = [bucket['Name'] for bucket in response['Buckets']]
         if bucket_name in existing_buckets:
@@ -21,7 +19,7 @@ def create_s3_bucket_if_not_exists(bucket_name):
             print(f"Le bucket {bucket_name} a été créé.")
     except ClientError as e:
         print(f"Erreur lors de la connexion à S3 : {e}")
-        raise e  # Re-raise the error to propagate it to the calling process
+        raise e  
 
 if __name__ == "__main__":
     create_s3_bucket_if_not_exists('open-sky-datalake-bucket')

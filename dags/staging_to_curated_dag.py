@@ -18,7 +18,7 @@ dag3 = DAG(
     }
 )
 
-# Fonction pour exécuter le script Python qui gère tout le processus
+# script Python qui gère tout le processus
 def run_mysql_to_mongodb_script():
     try:
         result = subprocess.run(
@@ -34,11 +34,11 @@ def run_mysql_to_mongodb_script():
     except Exception as e:
         logging.error(f"Erreur dans l'exécution du script : {e}")
 
-# Définir la tâche d'exécution du script
+# tâche d'exécution du script
 process_data_task = PythonOperator(
     task_id='run_mysql_to_mongodb_script',
     python_callable=run_mysql_to_mongodb_script,
     dag=dag3
 )
 
-process_data_task  # Ce DAG ne déclenche rien, c'est le dernier dans la chaîne
+process_data_task  # Dernier DAG de la chaine
