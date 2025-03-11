@@ -67,7 +67,9 @@ Utilisez la commande suivante pour lister les fichiers stockés :
 aws --endpoint-url=http://localhost:4566 s3 ls s3://open-sky-datalake-bucket/ --recursive
 ```
 
-#### 📸 Capture d’écran du stockage S3 (ajoutez ici votre image)
+#### 📸 Capture d’écran du stockage S3 
+![Capture d’écran 2025-03-12 001409](https://github.com/user-attachments/assets/b9ab4a73-306a-47a1-bee2-d50463e2efa0)
+
 
 ### 2. Vérifier les données dans MySQL
 Accédez au conteneur MySQL et effectuez une requête de vérification :
@@ -78,12 +80,16 @@ use staging;
 select * from flights limit 5;
 ```
 
-#### 📸 Capture d’écran de la base de données MySQL (ajoutez ici votre image)
+#### 📸 Capture d’écran de la base de données MySQL 
+
+![Capture d’écran 2025-03-12 001943](https://github.com/user-attachments/assets/f9209abf-f9d8-4b69-a3ee-878070f6fba2)
 
 ### 3. Vérifier les données dans MongoDB Compass
 Ouvrez MongoDB Compass et connectez-vous à votre base de données pour explorer les documents.
 
-#### 📸 Capture d’écran de MongoDB Compass (ajoutez ici votre image)
+#### 📸 Capture d’écran de MongoDB Compass 
+
+![Capture d’écran 2025-03-12 001809](https://github.com/user-attachments/assets/0180961a-d87f-4b38-aa3d-a6e9dba8bf17)
 
 ---
 
@@ -94,4 +100,7 @@ Ouvrez MongoDB Compass et connectez-vous à votre base de données pour explorer
 - **Hamza DOUGAREM** - [hamza.dougarem@laposte.net](mailto:hamza.dougarem@laposte.net)
 
 Merci pour votre intérêt et votre retour ! 🚀
+
+
+
 
