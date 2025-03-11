@@ -262,6 +262,8 @@ services:
     environment:
       - SERVICES=s3   # On indique qu'on veut simuler le service S3
       - DEBUG=1       # Afficher les logs détaillés pour LocalStack
+      #- AWS_ACCESS_KEY_ID=hamza
+      #- AWS_SECRET_ACCESS_KEY=hamza123
     ports:
       - "4566:4566"   # Port LocalStack (S3 exposé sur ce port)
       

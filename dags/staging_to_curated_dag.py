@@ -1,14 +1,14 @@
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 import subprocess
 import logging
 
 # Définir le DAG
-dag = DAG(
+dag3 = DAG(
     'mysql_to_mongodb',
     description='Pipeline de transformation des données MySQL vers MongoDB',
-    schedule_interval='@hourly',  # Exécution toutes les heures
+    schedule_interval=None,  # Ce DAG est déclenché par le DAG 2
     start_date=datetime(2025, 3, 9),
     catchup=False,
     default_args={
@@ -38,5 +38,7 @@ def run_mysql_to_mongodb_script():
 process_data_task = PythonOperator(
     task_id='run_mysql_to_mongodb_script',
     python_callable=run_mysql_to_mongodb_script,
-    dag=dag
+    dag=dag3
 )
+
+process_data_task  # Ce DAG ne déclenche rien, c'est le dernier dans la chaîne

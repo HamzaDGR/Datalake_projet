@@ -7,4 +7,6 @@ pandas
 python-dotenv
 boto3
 mysql-connector-python
+pymysql
 pymongo
+motor

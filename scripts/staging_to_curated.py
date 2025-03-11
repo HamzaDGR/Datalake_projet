@@ -13,7 +13,7 @@ MYSQL_PASSWORD = "root"
 MYSQL_DATABASE = "staging"
 
 # Configuration MongoDB
-MONGO_URI = "mongodb://localhost:27017"
+MONGO_URI = "mongodb://host.docker.internal:27017"
 MONGO_DB_NAME = "curated"
 MONGO_COLLECTION_NAME = "flights"
 
