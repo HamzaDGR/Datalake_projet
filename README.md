@@ -136,7 +136,7 @@ L'objectif final de ce projet est de développer un dashboard interactif avec St
 
 ### 👥 Contributeurs
 - **Tom-Hugues ALLARD** - [tom-hugues.allard@efrei.net](mailto:tom-hugues.allard@efrei.net)  
-- **Hamza DOUGAREM** - [hamza.dougarem@laposte.net](mailto:hamza.dougarem@laposte.net)
+- **Hamza DOUGAREM** - [hamza.dougarem@efrei.net](mailto:hamza.dougarem@efrei.net)
 
 Merci pour votre intérêt et votre retour ! 🚀
 
